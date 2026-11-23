@@ -55,3 +55,8 @@ pythonVersion = "3.11"
 typeCheckingMode = "basic"
 include = ["apps/api", "packages"]
 exclude = [".venv", "node_modules"]
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.1.0",
+]
