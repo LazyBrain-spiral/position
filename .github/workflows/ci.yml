@@ -1,0 +1,69 @@
+name: Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-validate:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup uv Python
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.12.17"
+          enable-cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          uv sync
+
+      - name: Run Ruff Lint & Format Checks
+        run: uv run ruff check .
+
+      - name: Run Type Checking
+        run: |
+          uv run pyright
+          npm run --workspace=@repo/web typecheck
+
+  backend-tests:
+    name: Backend Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.12.17"
+      - run: uv sync
+      - name: Run Pytest Suite
+        run: uv run pytest --cov=apps/api --cov=packages
+
+  frontend-build:
+    name: Frontend Build & Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "npm"
+      - run: npm ci
+      - name: Build Web Application
+        run: npm run --workspace=@repo/web build

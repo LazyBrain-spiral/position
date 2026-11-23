@@ -1,0 +1,22 @@
+# 4-Track Ownership Configuration
+# Format: [path] [owner]
+
+# Monorepo Core & Infrastructure (SDE 1 - Platform Lead)
+/infra/                   @platform-lead
+/pyproject.toml           @platform-lead
+/package.json             @platform-lead
+/.github/                 @platform-lead
+
+# Shared Contracts & Domain Interfaces (Requires Cross-Track Review)
+/packages/contracts/      @platform-lead @backend-lead @frontend-lead
+
+# Backend API & Domain Services (SDE 2 - Backend Lead)
+/apps/api/                @backend-lead
+/packages/common/         @backend-lead @platform-lead
+
+# Frontend Application (SDE 3 - Frontend Lead)
+/apps/web/                @frontend-lead
+
+# Quality, Test Automation & Docs (SDE 4 - Quality & Data Lead)
+/docs/                    @quality-lead
+/**/tests/                @quality-lead

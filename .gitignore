@@ -1,0 +1,65 @@
+# Top-Tier SDE Standard .gitignore
+
+# Dependencies
+node_modules/
+.venv/
+env/
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment and Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.cert
+secrets/
+
+# Build and Distribution
+dist/
+build/
+out/
+.next/
+*.egg-info/
+.eggs/
+*.whl
+
+# Testing & Coverage
+coverage/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.vitest/
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+*.sublime-project
+*.sublime-workspace
+
+# Databases & Local state
+*.db
+*.sqlite3
+*.db-shm
+*.db-wal
+data/local/
+volumes/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

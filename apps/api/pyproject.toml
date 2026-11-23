@@ -1,0 +1,22 @@
+[project]
+name = "api"
+version = "0.1.0"
+description = "High-performance modular enterprise API service"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "common",
+    "contracts",
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.10.0",
+    "uvicorn[standard]>=0.34.0",
+]
+
+[tool.uv.sources]
+contracts = { workspace = true }
+common = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,0 +1,30 @@
+{
+  "name": "enterprise-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade 4-contributor monorepo architecture",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "npm install && uv sync",
+    "dev": "concurrently -n \"API,WEB\" -c \"blue,green\" \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cd apps/api && uv run uvicorn src.main:app --reload --port 8000",
+    "dev:web": "npm run --workspace=@repo/web dev",
+    "build": "npm run --workspace=@repo/web build",
+    "test": "npm run test:api && npm run test:web",
+    "test:api": "uv run pytest",
+    "test:web": "npm run --workspace=@repo/web test",
+    "lint": "uv run ruff check . && npm run --workspace=@repo/web lint",
+    "format": "uv run ruff format . && prettier --write \"apps/web/**/*.{ts,tsx,json,css}\"",
+    "typecheck": "uv run pyright && npm run --workspace=@repo/web typecheck",
+    "ci": "npm run lint && npm run typecheck && npm run test",
+    "docker:up": "docker compose -f infra/docker-compose.yml up -d --build",
+    "docker:down": "docker compose -f infra/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.5.3"
+  }
+}
