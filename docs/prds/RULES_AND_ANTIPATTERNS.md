@@ -46,6 +46,7 @@
 | Inventing locations in Amber LLM responses | Amber MUST always use tool outputs; never hallucinate floors or shelves. |
 | Blocking `uvicorn` event loop with YOLO inference | Run camera inference in dedicated worker threads; push annotated JPEGs & events safely. |
 | Adding Node/React build steps to `web/` | `web/` is plain HTML + vanilla JS + 1 CSS file served directly by FastAPI. Zero build step. |
+| Coding blind without checking GitHub comments | Always run `gh issue view 1 --comments --repo priyamraj201-art/position` at session start and adapt your code to any `[HANDOFF]`, `[CONTRACT-REQ]`, or `[MERGE-POINT]` comments. |
 
 ---
 

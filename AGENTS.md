@@ -23,9 +23,10 @@ The human operator will tell you your track at session start (e.g., `"You are Tr
 Every PRD has a Table of Contents. Read only what your track needs:
 
 1. **Always read**: `AGENTS.md` (this file) + `docs/prds/RULES_AND_ANTIPATTERNS.md`
-2. **Read your state**: `docs/state/track-<N>.md`
-3. **Read your Track section**: `docs/prds/TRACKS_AND_TASKS.md` (only your track's section)
-4. **Read relevant PRD sections**:
+2. **Read live GitHub sync**: Run `gh issue view 1 --comments --repo priyamraj201-art/position` (and check open PR comments) to see your latest assignments, `[HANDOFF]`s, `[CONTRACT-REQ]`s, and `[MERGE-POINT]`s.
+3. **Read your state**: `docs/state/track-<N>.md`
+4. **Read your Track section**: `docs/prds/TRACKS_AND_TASKS.md` (only your track's section)
+5. **Read relevant PRD sections**:
    - **Track 1**: `PRD_01_PRODUCT_AND_DATA.md`, `PRD_02_API_RULES_AND_AMBER.md`
    - **Track 2**: `PRD_01_PRODUCT_AND_DATA.md` (§4–§5), `PRD_03_VISION_LABELS_HARNESS.md`
    - **Track 3**: `PRD_02_API_RULES_AND_AMBER.md` (API/WS/SSE contracts only), `PRD_04_UI_MOBILE_FIRMWARE.md`
@@ -51,6 +52,15 @@ Because 4 agents work in parallel on separate branches (`feat/track-1-*`, `feat/
 - **Verified**: Passes `scripts/run_on_video.py` on synthetic video 02 at 8.4 FPS CPU.
 - **Action Needed**: Track 1 can now wire `VisionPipeline` into `app/vision/worker.py`.
 ```
+
+### 3.3 Mandatory Comment-Driven Adaptation
+- **Read Before Coding**: At the start of every session (and before starting any Wave 2/3 task), run `gh issue view 1 --comments --repo priyamraj201-art/position`.
+- **Adapt to Comments**:
+  - If you see a `[HANDOFF]` for a module your track consumes, **use the exact import path and signature** posted in that comment.
+  - If you are **Track 1 (Shivam)** and see a `[CONTRACT-REQ]`, either approve & apply it to `models.py`/`routers/` (then post `[MERGE-POINT]`) or reply with the counter-proposal.
+  - If you see `[BLOCKED @track-<your-N>]`, prioritize unblocking that track or reply with an ETA/mock contract.
+  - If you see `[MERGE-POINT]`, `git pull origin main` (or rebase) immediately before writing more code.
+- **Acknowledge**: Post a short reply comment on Issue #1 once you have applied another track's `[HANDOFF]` or resolved a `[CONTRACT-REQ]`.
 
 ---
 
