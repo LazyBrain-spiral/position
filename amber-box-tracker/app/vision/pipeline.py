@@ -74,9 +74,10 @@ class VisionPipeline:
         rest_seconds: float = 3.0,
         sighting_dedup_seconds: float = 10.0,
         track_bind_ttl: float = 10.0,
-        snapshot_dir: str | Path = "data/snapshots",
-        wechat_dir: str | Path = "models/wechat",
+        snapshot_dir: str | Path | None = None,
+        wechat_dir: str | Path | None = None,
     ) -> None:
+        pkg_root = Path(__file__).resolve().parents[2]
         self.marker_to_shelf = marker_to_shelf or {
             1: "L2-B1",
             2: "L2-B2",
@@ -88,11 +89,11 @@ class VisionPipeline:
         self.rest_seconds = rest_seconds
         self.sighting_dedup_seconds = sighting_dedup_seconds
         self.track_bind_ttl = track_bind_ttl
-        self.snapshot_dir = Path(snapshot_dir)
+        self.snapshot_dir = Path(snapshot_dir) if snapshot_dir else (pkg_root / "data" / "snapshots")
         self.snapshot_dir.mkdir(parents=True, exist_ok=True)
 
         self.detector = BoxDetector(detector_mode=detector_mode, imgsz=imgsz, conf=conf)
-        self.qr_decoder = QRDecoder(wechat_dir=wechat_dir)
+        self.qr_decoder = QRDecoder(wechat_dir=wechat_dir or (pkg_root / "models" / "wechat"))
         self.marker_detector = MarkerDetector()
 
         self._frame_idx = 0

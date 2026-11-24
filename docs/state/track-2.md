@@ -4,7 +4,7 @@
 - **Branch**: `feat/track-2-vision-labels`
 - **Status**: READY_FOR_HANDOFF
 - **Current Task**: Wave 2 complete — ready for Track 1 `worker.py` wiring (`[HANDOFF]`)
-- **Last Completed**: Implemented full Track 2 vision pipeline, PDF labels, synthetic videos, and offline harness; all 6 Track 2 tests pass and `02_wrong_floor.mp4` runs at 13.79 FPS CPU (`read_rate: 1.0`).
+- **Last Completed**: Implemented full Track 2 vision pipeline, PDF labels, synthetic videos, and offline harness; all 6 Track 2 tests pass. Verified both `detector=none` (**13.79–28.45 FPS** CPU, `read_rate: 1.0`) and `yolo_world` (`yolov8s-worldv2.pt`, `imgsz=640`, WeChat QR weights: **4.43 FPS** CPU, `read_rate: 1.0`).
 - **Blockers**: None
 - **Next Sync**: Post `[TRACK-2 -> TRACK-1] [HANDOFF]` on GitHub Issue #1 once branch is pushed.
 

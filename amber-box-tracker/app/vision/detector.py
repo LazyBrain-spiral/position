@@ -10,6 +10,7 @@ import numpy as np
 
 logger = logging.getLogger("vision.detector")
 
+PACKAGE_ROOT = Path(__file__).resolve().parents[2]
 CLASSES = ["cardboard box", "person"]
 
 
@@ -27,7 +28,7 @@ class BoxDetector:
     def __init__(
         self,
         detector_mode: str = "yolo_world",
-        model_path: str | Path = "models/yolov8s-worldv2.pt",
+        model_path: str | Path | None = None,
         imgsz: int = 960,
         conf: float = 0.15,
     ) -> None:
@@ -43,13 +44,13 @@ class BoxDetector:
         try:
             from ultralytics import YOLO
 
-            target = str(model_path)
+            default_model = PACKAGE_ROOT / "models" / "yolov8s-worldv2.pt"
+            target = str(model_path or default_model)
             if self.mode == "yoloe" or not Path(target).exists():
-                alt = Path("models/yoloe-11s-seg.pt")
+                alt = PACKAGE_ROOT / "models" / "yoloe-11s-seg.pt"
                 if self.mode == "yoloe" and alt.exists():
                     target = str(alt)
                 elif not Path(target).exists():
-                    # Allow ultralytics to resolve model name from cache or download
                     target = "yolov8s-worldv2.pt" if self.mode == "yolo_world" else "yoloe-11s-seg.pt"
 
             model = YOLO(target)
