@@ -1,17 +1,16 @@
-# Track 3 State: Frontend Web & UX
+# Track 3 State — Dashboard UI, Mobile POV (/m) & ESP32 Firmware
 
-- **Owner**: Frontend & UX Lead (SDE 3)
-- **Status**: ACTIVE
-- **Current Sprint**: Scaffold & Foundation
-- **Current Step**: Client foundation and API integration layer
-- **Last Completed**: React 19 + TypeScript web scaffold with strongly typed API client
+- **Owner**: Yashwant + Agent 3
+- **Branch**: `feat/track-3-ui-mobile-firmware`
+- **Status**: READY_TO_START
+- **Current Task**: Wave 1 — Build `web/` (5-tab dark dashboard + Virtual Shelf Grid + Amber panel) & `web/m.html` + `firmware/shelf-light/`
+- **Last Completed**: PRD & multi-track governance setup
+- **Blockers**: None (UI mocks against `PRD_02` API contracts until Track 1 routers merge)
+- **Next Sync**: Post `[TRACK-3] [READY]` on GitHub once UI & `sim.py` are wired to live endpoints.
 
-### Active Deliverables:
-- [x] Vite + React 19 + TypeScript build pipeline
-- [x] Strongly typed `ApiClient` with correlation ID injection
-- [x] Responsive layout with live health check and resource viewer
-- [ ] Component library tokenization and design system
-- [ ] Form validation and optimistic UI updates
-
-### Blockers:
-- None
+### Checklist
+- [ ] `web/styles.css` (dark projector-ready theme + Virtual Shelf Grid pulse animations)
+- [ ] `web/index.html` + `web/app.js` (Live MJPEG, Alerts SSE + toast + speech, Cartons timeline, Receive, Find + Virtual Grid, Amber panel)
+- [ ] `web/m.html` (HTTPS `getUserMedia` + `WS /ws/pov` 4 fps, POV video upload, Damage report, Hold-to-talk Amber voice)
+- [ ] `firmware/shelf-light/` (`platformio.ini`, `include/config.h`, `src/main.cpp` for ESP32-C3 + WS2812B + buzzer)
+- [ ] `firmware/shelf-light/sim.py` (terminal shelf-light simulator)
