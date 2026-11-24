@@ -10,6 +10,7 @@ from app.amber.tools import AmberStore
 
 _CODE = r"(?:KYC1:)?[A-Z0-9]{6}"
 _DEL = r"DEL-\d+"
+_IT = re.compile(r"^(?:please\s+)?(?:light|show|blink)(?: it| that| this)?(?: up)?[?.!]*$", re.I)
 _LIGHT = re.compile(r"^(?:please\s+)?(?:light up|blink|show(?: me)?)\s+(.+?)[?.!]*$", re.I)
 _GOES = re.compile(rf"where does\s+({_CODE})\s+go", re.I)
 _STATUS = re.compile(rf"status of\s+({_DEL})", re.I)
@@ -23,6 +24,7 @@ class OfflineAmberProvider(AmberProvider):
 
     def __init__(self, store: AmberStore) -> None:
         self._store = store
+        self._last: str | None = None  # label code of the last find, for "light it up"
 
     def _call(self, calls: list[dict[str, Any]], name: str, args: dict[str, Any],
               confirm: bool) -> dict[str, Any]:
@@ -60,6 +62,8 @@ class OfflineAmberProvider(AmberProvider):
                 return ChatResult("No open alerts.", calls)
             return ChatResult(f"{r['count']} open: " + "; ".join(a["message"] for a in r["alerts"]),
                               calls)
+        if _IT.match(text) and self._last:
+            return self._find(calls, self._last, True, confirm)
         if m := _LIGHT.match(text):
             return self._find(calls, m[1], True, confirm)
         if m := _FIND.match(text):
@@ -73,6 +77,7 @@ class OfflineAmberProvider(AmberProvider):
         if not r["matches"]:
             return ChatResult(f"I found nothing matching {query}.", calls)
         top = r["matches"][0]
+        self._last = top["label_code"]
         where = top.get("last_seen", f"not seen yet, belongs at {top['belongs_at']}")
         reply = f"{top['item_name']} ({top['label_code']}) is at {where}."
         if len(r["matches"]) > 1:

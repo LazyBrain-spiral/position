@@ -173,3 +173,18 @@ def test_unknown_tool_returns_error(store: FakeStore) -> None:
     client = FakeAnthropic({}, tool_name="drop_tables")
     r = AnthropicProvider(store, client=client).chat("hi")
     assert "error" in r.tool_calls[0]["result"]
+
+
+def test_light_it_up_uses_previous_find(store: FakeStore) -> None:
+    p = OfflineAmberProvider(store)
+    assert p.chat("light it up").tool_calls == []
+    p.chat("where is the Y strainer")
+    assert store.located == []
+    p.chat("Light it up")
+    assert store.located == ["KYC1:YS0601"]
+
+
+def test_acceptance_phrases(store: FakeStore) -> None:
+    p = OfflineAmberProvider(store)
+    assert "KYC1:BV2401" in p.chat("where is BV2401").reply
+    assert "cartons seen" in p.chat("status of DEL-2211").reply
