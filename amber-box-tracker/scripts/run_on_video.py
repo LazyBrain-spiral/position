@@ -13,7 +13,7 @@ import cv2
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.vision.pipeline import CameraContext, SightingEvent, VisionPipeline  # noqa: E402
+from app.vision.pipeline import CameraContext, SightingEvent, VisionPipeline
 
 DEFAULT_CARTON_DESTS = {
     "KYC1:BV2401": {"dest_level": 2, "dest_shelf": "L2-B2", "item_name": "2in ball valve", "po": "PO-1077"},
@@ -121,7 +121,7 @@ def run_video(
     src_fps = cap.get(cv2.CAP_PROP_FPS) or 15.0
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    step = max(1, int(round(src_fps / max(fps_process, 1))))
+    step = max(1, round(src_fps / max(fps_process, 1)))
 
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = video_path.stem

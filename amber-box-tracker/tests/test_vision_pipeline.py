@@ -10,14 +10,14 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.vision.markers import DetectedMarker, associate_box_to_shelf  # noqa: E402
-from app.vision.privacy import blur_person_heads  # noqa: E402
-from scripts.make_synthetic_video import (  # noqa: E402
+from app.vision.markers import DetectedMarker, associate_box_to_shelf
+from app.vision.privacy import blur_person_heads
+from scripts.make_synthetic_video import (
     make_video_01_gate_pov,
     make_video_02_wrong_floor,
     make_video_03_shelf,
 )
-from scripts.run_on_video import run_video  # noqa: E402
+from scripts.run_on_video import run_video
 
 
 def test_privacy_blurs_top_35_percent_only() -> None:

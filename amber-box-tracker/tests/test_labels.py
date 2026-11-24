@@ -12,7 +12,7 @@ import pymupdf
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts.make_labels import (  # noqa: E402
+from scripts.make_labels import (
     DEFAULT_CARTONS,
     DEFAULT_SHELVES,
     generate_carton_labels_pdf,
@@ -40,7 +40,7 @@ def _decode_qrs(img: np.ndarray) -> list[str]:
         decoded, _ = detector.detectAndDecode(img)
         if decoded:
             return [d for d in decoded if d]
-    except Exception:
+    except (cv2.error, AttributeError):
         pass
     qr_det = cv2.QRCodeDetector()
     ok, decoded_info, _, _ = qr_det.detectAndDecodeMulti(img)
@@ -84,6 +84,6 @@ def test_shelf_markers_roundtrip() -> None:
     detector = cv2.aruco.ArucoDetector(aruco_dict, cv2.aruco.DetectorParameters())
 
     for page_img, expected in zip(pages, DEFAULT_SHELVES, strict=True):
-        corners, ids, _ = detector.detectMarkers(page_img)
+        _corners, ids, _ = detector.detectMarkers(page_img)
         assert ids is not None, f"Failed to detect ArUco marker {expected['marker_id']}"
         assert int(expected["marker_id"]) in ids.flatten().tolist()

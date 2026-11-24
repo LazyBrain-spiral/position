@@ -47,11 +47,11 @@ class QRDecoder:
             else:
                 self._wechat = cv2.wechat_qrcode_WeChatQRCode()
                 logger.info("Loaded WeChatQRCode with built-in default model (weights not found)")
-        except Exception as exc:
+        except (cv2.error, AttributeError, RuntimeError) as exc:
             logger.warning("WeChatQRCode unavailable (%s); using QRCodeDetectorAruco fallback", exc)
             try:
                 self._aruco_qr = cv2.QRCodeDetectorAruco()
-            except Exception:
+            except (cv2.error, AttributeError):
                 self._aruco_qr = None
 
     def _raw_decode(self, img: np.ndarray) -> list[tuple[str, np.ndarray]]:

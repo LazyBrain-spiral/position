@@ -12,7 +12,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts.make_labels import make_aruco_pil, make_qr_pil  # noqa: E402
+from scripts.make_labels import make_aruco_pil, make_qr_pil
 
 WIDTH, HEIGHT = 1280, 720
 FPS = 15

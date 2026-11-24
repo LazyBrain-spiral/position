@@ -138,9 +138,13 @@ class VisionPipeline:
         dest = self.carton_destinations[code]
         dest_level = dest.get("dest_level")
         dest_shelf = dest.get("dest_shelf")
-        if camera.kind in {"hoist", "floor_entrance", "aisle"} and camera.level is not None:
-            if dest_level is not None and camera.level != dest_level:
-                return "wrong"
+        if (
+            camera.kind in {"hoist", "floor_entrance", "aisle"}
+            and camera.level is not None
+            and dest_level is not None
+            and camera.level != dest_level
+        ):
+            return "wrong"
         if camera.kind == "aisle" and is_resting and shelf_code is not None:
             if dest_shelf and shelf_code != dest_shelf:
                 return "wrong"

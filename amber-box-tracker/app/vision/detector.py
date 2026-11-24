@@ -57,7 +57,7 @@ class BoxDetector:
                 model.set_classes(CLASSES)
             self._model = model
             logger.info("Loaded detector %s (imgsz=%d, conf=%.2f)", target, imgsz, conf)
-        except Exception as exc:
+        except (ImportError, OSError, RuntimeError) as exc:
             logger.warning("Failed to load YOLO detector (%s); falling back to mode='none'", exc)
             self.mode = "none"
             self._model = None
