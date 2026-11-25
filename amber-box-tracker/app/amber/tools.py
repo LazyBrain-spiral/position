@@ -76,8 +76,9 @@ def _where(c: CartonView) -> str:
     return f"Floor {c.dest_level}, shelf {c.dest_shelf_code}"
 
 
-def _summary(c: CartonView) -> dict[str, Any]:
+def summarize(c: CartonView, score: float = 1.0) -> dict[str, Any]:
     out: dict[str, Any] = {
+        "score": round(score, 2),
         "label_code": c.label_code,
         "item_name": c.item_name,
         "po_number": c.po_number,
@@ -93,10 +94,13 @@ def _summary(c: CartonView) -> dict[str, Any]:
 def find_carton(store: AmberStore, query: str, auto_locate: bool = False) -> dict[str, Any]:
     """Fuzzy search cartons; with auto_locate, also light the shelf of the best match."""
     scored = sorted(((_score(query, c), c) for c in store.list_cartons()), key=lambda s: -s[0])
-    hits = [c for s, c in scored if s >= FUZZY_THRESHOLD][:MAX_MATCHES]
-    result: dict[str, Any] = {"query": query, "matches": [_summary(c) for c in hits]}
+    hits = [(s, c) for s, c in scored if s >= FUZZY_THRESHOLD][:MAX_MATCHES]
+    exact = [(s, c) for s, c in hits if c.label_code == normalize_code(query)]
+    if exact:  # a full label code names one carton, drop look-alike codes
+        hits = exact
+    result: dict[str, Any] = {"query": query, "matches": [summarize(c, s) for s, c in hits]}
     if auto_locate and hits:
-        result["locate"] = store.locate(hits[0].label_code)
+        result["locate"] = store.locate(hits[0][1].label_code)
     return result
 
 

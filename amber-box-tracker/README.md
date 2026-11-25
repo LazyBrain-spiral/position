@@ -60,6 +60,21 @@ Damage needs confirmation. The chat call returns `needs_confirmation: true`. Sen
 again with `confirm: true` to record it. The model can never confirm for itself. **Pending**:
 Track 1 to confirm this is the router contract.
 
+## MCP adapter (submission-facing)
+
+`app/amber/mcp_server.py` is a thin MCP server over stdio (standard library only). It adds no
+storage or rules of its own: each tool calls `app/amber/tools.py` over the app's SQLite data and
+wraps the result as `{answer, confidence, sources, needs_human_review, note}`. Rules for
+confidence and the review flag are in `app/amber/envelope.py`.
+
+Tools: `find_carton`, `where_does_this_go`, `delivery_status`, `report_damage`,
+`list_open_alerts`, and the optional `list_cartons`. `report_damage` never records through MCP:
+it returns `needs_human_review: true` and a person confirms in the app. `delivery_status` reads
+seen cartons from stored sightings, not from the caller.
+
+**Pending Track 1**: the SQLite-backed `AmberStore` (`build_store`) lands once `models.py` and
+`db.py` are on `main`. Until then the adapter runs only against the test store.
+
 ## Demo with no hardware (3 minutes)
 
 1. `python scripts/setup.py`, then start the server. Open the dashboard.
@@ -105,8 +120,8 @@ For the real-video test and for glasses/phone clips:
 
 ## ESP32 shelf light (optional)
 
-**Pending Track 3 confirmation.** This table is copied from the PRD-04 spec, not from finished
-firmware. Check it against `firmware/shelf-light/include/config.h` before wiring.
+Confirmed against Track 3's merged `firmware/shelf-light/include/config.h`. Set your own Wi-Fi
+values in a local config and do not commit them.
 
 | From | To |
 | :-- | :-- |

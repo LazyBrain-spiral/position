@@ -188,3 +188,9 @@ def test_acceptance_phrases(store: FakeStore) -> None:
     p = OfflineAmberProvider(store)
     assert "KYC1:BV2401" in p.chat("where is BV2401").reply
     assert "cartons seen" in p.chat("status of DEL-2211").reply
+
+
+def test_exact_label_code_returns_only_that_carton(store: FakeStore) -> None:
+    out = tools.find_carton(store, "bv2401")
+    assert [m["label_code"] for m in out["matches"]] == ["KYC1:BV2401"]
+    assert out["matches"][0]["score"] == 1.0
