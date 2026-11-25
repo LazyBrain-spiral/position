@@ -1,6 +1,7 @@
 """SQLite engine and session helpers (PRD-01: SQLModel on data/app.db)."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Annotated
 
@@ -9,7 +10,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
-DB_PATH = DATA_DIR / "app.db"
+DB_PATH = Path(os.environ.get("ABT_DB_PATH", str(DATA_DIR / "app.db")))
 
 _engine = None
 
