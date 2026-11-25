@@ -1,15 +1,14 @@
 """Rules engine tests (PRD-02 section 2.1), incl. fake-clock not_arrived."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
-from sqlmodel import Session, select
-
-from app import alerts, devices, rules
-from app.models import Alert, Camera, Carton, Shelf
+from app import devices, rules
 from app.db import get_engine, init_db
+from app.models import Alert, Camera, Carton, Shelf, utcnow
 from app.seed import seed_if_empty
+from sqlmodel import Session, select
 
 
 @pytest.fixture(autouse=True)
@@ -108,10 +107,10 @@ def test_put_away_stores_and_auto_resolves(session):
 
 def test_not_arrived_with_fake_clock(session):
     carton = get_carton(session)
-    carton.received_at = datetime.utcnow() - timedelta(minutes=10)
+    carton.received_at = utcnow() - timedelta(minutes=10)
     session.add(carton)
     session.commit()
-    now = datetime.utcnow()
+    now = utcnow()
     created = rules.check_not_arrived(session, now=now, minutes=2)
     assert len(created) == 1
     assert created[0].type == "not_arrived"
@@ -122,23 +121,23 @@ def test_not_arrived_with_fake_clock(session):
 
 def test_not_arrived_skips_within_window_and_unreceived(session):
     carton = get_carton(session)
-    carton.received_at = datetime.utcnow() - timedelta(seconds=30)
+    carton.received_at = utcnow() - timedelta(seconds=30)
     session.add(carton)
     session.commit()
-    assert rules.check_not_arrived(session, now=datetime.utcnow(), minutes=2) == []
+    assert rules.check_not_arrived(session, now=utcnow(), minutes=2) == []
     # received_at None (delivery not yet received) is skipped.
     carton.received_at = None
     session.add(carton)
     session.commit()
-    later = datetime.utcnow() + timedelta(hours=1)
+    later = utcnow() + timedelta(hours=1)
     assert rules.check_not_arrived(session, now=later, minutes=2) == []
 
 
 def test_not_arrived_cleared_by_dest_level_sighting(session):
     carton = get_carton(session)
-    carton.received_at = datetime.utcnow() - timedelta(minutes=10)
+    carton.received_at = utcnow() - timedelta(minutes=10)
     session.add(carton)
     session.commit()
     aisle = session.get(Camera, "CAM-AISLE-2")  # level 2 == dest_level
     rules.record_sighting(session, carton, aisle)
-    assert rules.check_not_arrived(session, now=datetime.utcnow(), minutes=2) == []
+    assert rules.check_not_arrived(session, now=utcnow(), minutes=2) == []

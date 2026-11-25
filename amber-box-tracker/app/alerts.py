@@ -6,12 +6,11 @@ resolved alert is published to the broadcaster for the SSE stream.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from sqlmodel import Session, select
 
-from app.models import Alert, Carton, Shelf
+from app.models import Alert, Carton, DeliveryIssue, Shelf
 
 ALERT_TYPES = {"wrong_floor", "wrong_shelf", "not_arrived", "short_delivery", "damaged"}
 
@@ -42,7 +41,7 @@ class AlertBroadcaster:
 broadcaster = AlertBroadcaster()
 
 
-def alert_payload(alert: Alert, shelf_light_events: Optional[list[dict]] = None) -> dict:
+def alert_payload(alert: Alert, shelf_light_events: list[dict] | None = None) -> dict:
     return {
         "id": alert.id,
         "type": alert.type,
@@ -54,32 +53,40 @@ def alert_payload(alert: Alert, shelf_light_events: Optional[list[dict]] = None)
     }
 
 
-def open_alert_for(session: Session, carton_id: int, alert_type: str) -> Optional[Alert]:
-    return session.exec(
-        select(Alert).where(
-            Alert.carton_id == carton_id,
-            Alert.type == alert_type,
-            Alert.status == "open",
-        )
-    ).first()
+def open_alert_for(
+    session: Session,
+    carton_id: int | None,
+    alert_type: str,
+    delivery_id: str | None = None,
+) -> Alert | None:
+    """The one open alert for the dedup key: (carton_id, type), or
+    (delivery_id, type) for delivery-scoped alerts without a carton."""
+    query = select(Alert).where(Alert.type == alert_type, Alert.status == "open")
+    if carton_id is not None:
+        query = query.where(Alert.carton_id == carton_id)
+    elif delivery_id is not None:
+        query = query.where(Alert.delivery_id == delivery_id)
+    else:
+        return None
+    return session.exec(query).first()
 
 
 def create_alert(
     session: Session,
     alert_type: str,
     message: str,
-    carton_id: Optional[int] = None,
-    delivery_id: Optional[str] = None,
-    camera_id: Optional[str] = None,
-    snapshot_path: Optional[str] = None,
-    shelf_light_events: Optional[list[dict]] = None,
+    carton_id: int | None = None,
+    delivery_id: str | None = None,
+    camera_id: str | None = None,
+    snapshot_path: str | None = None,
+    shelf_light_events: list[dict] | None = None,
     publish: bool = True,
 ) -> tuple[Alert, bool]:
     """Create an alert with dedup. Returns (alert, created)."""
     if alert_type not in ALERT_TYPES:
         raise ValueError(f"unknown alert type: {alert_type}")
-    if carton_id is not None:
-        existing = open_alert_for(session, carton_id, alert_type)
+    if carton_id is not None or delivery_id is not None:
+        existing = open_alert_for(session, carton_id, alert_type, delivery_id)
         if existing is not None:
             return existing, False
     alert = Alert(
@@ -102,13 +109,15 @@ def resolve_alert(
     session: Session,
     alert_id: int,
     note: str,
-    new_dest_shelf_id: Optional[int] = None,
+    new_dest_shelf_id: int | None = None,
     publish: bool = True,
-) -> Optional[Alert]:
+) -> Alert | None:
     """Resolve an alert; optionally repoint the carton's destination shelf."""
     alert = session.get(Alert, alert_id)
     if alert is None:
         return None
+    if alert.status == "resolved":
+        return alert  # idempotent: never overwrite the note or republish
     alert.status = "resolved"
     alert.resolved_note = note
     if new_dest_shelf_id is not None and alert.carton_id is not None:
@@ -146,10 +155,75 @@ def auto_resolve_for_carton(
     return count
 
 
+def report_damage(
+    session: Session,
+    carton: Carton,
+    note: str,
+    evidence: list[dict] | None = None,
+    snapshot_path: str | None = None,
+    publish: bool = True,
+) -> tuple[DeliveryIssue, Alert]:
+    """Track 1 owns DeliveryIssue (PRD-01 1.3): record the damaged item and
+    raise the paired `damaged` alert atomically. Callers: mobile damage
+    endpoint and Amber's report_damage tool (after its confirm step)."""
+    item: dict[str, Any] = {"label_code": carton.label_code, "note": note}
+    if snapshot_path:
+        item["snapshot_path"] = snapshot_path
+    issue = DeliveryIssue(
+        delivery_id=carton.delivery_id,
+        damaged_items=[item],
+        evidence=evidence or [],
+    )
+    session.add(issue)
+    session.commit()
+    session.refresh(issue)
+    alert, _ = create_alert(
+        session,
+        "damaged",
+        f"Box {carton.label_code} ({carton.item_name}) reported damaged: {note}",
+        carton_id=carton.id,
+        delivery_id=carton.delivery_id,
+        snapshot_path=snapshot_path,
+        publish=publish,
+    )
+    return issue, alert
+
+
+def report_short_delivery(
+    session: Session,
+    delivery_id: str,
+    missing_items: list[dict],
+    wrong_items: list[dict] | None = None,
+    evidence: list[dict] | None = None,
+    publish: bool = True,
+) -> tuple[DeliveryIssue, Alert]:
+    """Record a short delivery (POV proof-of-delivery found fewer cartons
+    than expected) and raise the paired `short_delivery` alert. Deduped
+    per (delivery_id, type) so re-uploads don't spam the dashboard."""
+    issue = DeliveryIssue(
+        delivery_id=delivery_id,
+        missing_items=missing_items,
+        wrong_items=wrong_items or [],
+        evidence=evidence or [],
+    )
+    session.add(issue)
+    session.commit()
+    session.refresh(issue)
+    codes = ", ".join(str(i.get("label_code", "?")) for i in missing_items)
+    alert, _ = create_alert(
+        session,
+        "short_delivery",
+        f"Delivery {delivery_id} is short: missing {codes}.",
+        delivery_id=delivery_id,
+        publish=publish,
+    )
+    return issue, alert
+
+
 def list_alerts(
     session: Session,
-    alert_type: Optional[str] = None,
-    status: Optional[str] = None,
+    alert_type: str | None = None,
+    status: str | None = None,
 ) -> list[Alert]:
     query = select(Alert).order_by(Alert.created_at.desc())
     if alert_type:

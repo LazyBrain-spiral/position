@@ -9,12 +9,12 @@ is injectable for tests.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 from sqlmodel import Session, select
 
 from app import alerts, devices
-from app.models import Alert, Camera, Carton, Shelf, Sighting
+from app.models import Alert, Camera, Carton, Shelf, Sighting, utcnow
 
 WRONG_FLOOR_KINDS = {"hoist", "floor_entrance", "aisle"}
 
@@ -24,12 +24,12 @@ def record_sighting(
     carton: Carton,
     camera: Camera,
     source: str = "cctv",
-    level: Optional[int] = None,
-    shelf_id: Optional[int] = None,
-    seen_at: Optional[datetime] = None,
-    snapshot_path: Optional[str] = None,
-    bbox: Optional[dict[str, Any]] = None,
-    track_id: Optional[int] = None,
+    level: int | None = None,
+    shelf_id: int | None = None,
+    seen_at: datetime | None = None,
+    snapshot_path: str | None = None,
+    bbox: dict[str, Any] | None = None,
+    track_id: int | None = None,
     is_resting: bool = False,
 ) -> Sighting:
     """Store a sighting and apply the PRD-02 section 2.1 rules."""
@@ -41,7 +41,7 @@ def record_sighting(
         source=source,
         level=level,
         shelf_id=shelf_id,
-        seen_at=seen_at or datetime.utcnow(),
+        seen_at=seen_at or utcnow(),
         snapshot_path=snapshot_path,
         bbox=bbox,
         track_id=track_id,
@@ -141,14 +141,14 @@ def record_sighting(
 
 def check_not_arrived(
     session: Session,
-    now: Optional[datetime] = None,
+    now: datetime | None = None,
     minutes: int = 2,
 ) -> list[Alert]:
     """Alert on received cartons not seen on their destination level in time.
 
     Clock and window are injectable for tests (fake clock per PRD-02 2.1).
     """
-    now = now or datetime.utcnow()
+    now = now or utcnow()
     created: list[Alert] = []
     cartons = session.exec(
         select(Carton).where(Carton.status == "received")

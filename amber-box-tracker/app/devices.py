@@ -9,14 +9,13 @@ from __future__ import annotations
 import asyncio
 import time
 from collections import defaultdict, deque
-from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from sqlmodel import Session, select
 
-from app.models import Shelf, ShelfLight
+from app.models import Shelf, ShelfLight, utcnow
 
-COMMAND_COLORS: dict[str, Optional[str]] = {
+COMMAND_COLORS: dict[str, str | None] = {
     "blink": "blue",
     "blink_red": "red",
     "ack": "green",
@@ -35,7 +34,7 @@ def reset() -> None:
     _events.clear()
 
 
-def queue_command(device_id: Optional[str], cmd: str, seconds: int) -> Optional[dict]:
+def queue_command(device_id: str | None, cmd: str, seconds: int) -> dict | None:
     """Queue a command for a device. Returns the command, or None if the
     device id is missing (shelf without a light)."""
     if cmd not in COMMAND_COLORS:
@@ -63,15 +62,15 @@ def _drain(device_id: str) -> list[dict]:
 def update_telemetry(
     session: Session,
     device_id: str,
-    battery: Optional[float] = None,
-    rssi: Optional[int] = None,
-) -> Optional[ShelfLight]:
+    battery: float | None = None,
+    rssi: int | None = None,
+) -> ShelfLight | None:
     light = session.exec(
         select(ShelfLight).where(ShelfLight.device_id == device_id)
     ).first()
     if light is None:
         return None
-    light.last_seen = datetime.utcnow()
+    light.last_seen = utcnow()
     if battery is not None:
         light.battery = battery
     if rssi is not None:
@@ -86,8 +85,8 @@ async def wait_commands(
     session: Session,
     device_id: str,
     wait: float = 0,
-    battery: Optional[float] = None,
-    rssi: Optional[int] = None,
+    battery: float | None = None,
+    rssi: int | None = None,
 ) -> list[dict]:
     """Long-poll for queued commands, up to min(wait, MAX_WAIT_SECONDS)."""
     update_telemetry(session, device_id, battery, rssi)
@@ -105,7 +104,7 @@ async def wait_commands(
             break
         try:
             await asyncio.wait_for(event.wait(), timeout=remaining)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             break
         if _queues.get(device_id):
             return _drain(device_id)

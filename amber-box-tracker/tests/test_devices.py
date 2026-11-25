@@ -4,12 +4,11 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from sqlmodel import Session, select
-
 from app import devices
-from app.models import ShelfLight
 from app.db import get_engine, init_db
+from app.models import ShelfLight
 from app.seed import seed_if_empty
+from sqlmodel import Session, select
 
 
 @pytest.fixture(autouse=True)
