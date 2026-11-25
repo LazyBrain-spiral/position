@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 ESP32 Shelf-Light Beacon Terminal Simulator
 Track 3 — Amber Box Tracker (Yashwant)
