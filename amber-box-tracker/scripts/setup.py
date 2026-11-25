@@ -47,7 +47,7 @@ def download_wechat_weights() -> None:
             with urllib.request.urlopen(url, timeout=30) as resp:
                 dest.write_bytes(resp.read())
             print(f"[setup] wechat: downloaded {name}")
-        except Exception as exc:  # offline fallback, never fatal
+        except Exception as exc:  # noqa: BLE001 - offline fallback must never crash setup (RULES 1.4)
             print(
                 f"[setup] WARNING: could not download {name} ({exc}). "
                 "QR decoding will use the no-args WeChatQRCode / "

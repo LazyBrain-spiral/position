@@ -4,11 +4,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import yaml
-from sqlmodel import Session, select
-
 from app import models
 from app.db import get_engine, init_db
 from app.seed import seed_if_empty
+from sqlmodel import Session, select
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -34,7 +33,7 @@ def test_cameras_yaml_matches_seeded_cameras():
     entries = {c["id"]: c for c in cfg["cameras"]}
     assert set(entries) == {"CAM-GATE", "CAM-HOIST-3", "CAM-AISLE-2", "CAM-POV"}
     assert entries["CAM-POV"]["source_type"] == "push"
-    for cam_id, entry in entries.items():
+    for entry in entries.values():
         assert entry["enabled"] is True
         assert entry["fps_process"] >= 1
 
