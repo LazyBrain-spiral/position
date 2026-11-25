@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated
 
+from fastapi import Depends
 from sqlmodel import Session, SQLModel, create_engine
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,3 +42,6 @@ def get_session(engine=None):
     """FastAPI dependency yielding a session."""
     with Session(engine or get_engine()) as session:
         yield session
+
+
+SessionDep = Annotated[Session, Depends(get_session)]

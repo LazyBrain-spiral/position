@@ -10,6 +10,6 @@ PyYAML>=6.0
 qrcode[pil]>=7.4
 reportlab>=4.2
 ultralytics>=8.3
-mcp>=1.0
+mcp>=1.0,<2.0  # 2.x changes the FastMCP API; re-evaluate at the SDK swap
 python-multipart>=0.0.9
 pytest>=8.0
