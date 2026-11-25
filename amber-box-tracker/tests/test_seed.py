@@ -1,11 +1,10 @@
 """Seed and model tests: PR 1a must leave a coherent, seeded database."""
 from __future__ import annotations
 
-from sqlmodel import Session, select
-
 from app import models
 from app.db import get_engine, init_db
 from app.seed import seed_if_empty
+from sqlmodel import Session, select
 
 
 def make_session() -> Session:

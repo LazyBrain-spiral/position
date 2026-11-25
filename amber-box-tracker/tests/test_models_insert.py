@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlmodel import Session, select
-
 from app import models
 from app.db import get_engine, init_db
+from app.models import utcnow
 from app.seed import seed_if_empty
+from sqlmodel import Session, select
 
 
 def make_session() -> Session:
@@ -69,7 +69,7 @@ def test_delivery_issue_insert_with_default_timestamp():
 def test_carton_received_at_naive_write():
     with make_session() as session:
         carton = session.exec(select(models.Carton)).first()
-        carton.received_at = datetime.utcnow()
+        carton.received_at = utcnow()
         session.add(carton)
         session.commit()
         session.refresh(carton)
