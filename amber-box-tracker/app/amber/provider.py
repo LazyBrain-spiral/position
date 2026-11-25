@@ -65,9 +65,20 @@ class AmberProvider(ABC):
         """Answer one message. confirm=True re-sends a message that needed confirmation."""
 
 
-def get_provider(store: AmberStore) -> AmberProvider:
-    """Gemini or Anthropic when a key is set and the SDK works, otherwise offline regex."""
+def get_provider(store: AmberStore | None = None, *, engine: Any = None) -> AmberProvider:
+    """Gemini or Anthropic when a key is set and the SDK works, otherwise offline regex.
+
+    Pass a ready `store`, or an SQLAlchemy `engine` (what the FastAPI router has) to use the app
+    database through `SqlAmberStore`.
+    """
     from app.amber.offline_provider import OfflineAmberProvider
+
+    if store is None:
+        if engine is None:
+            raise ValueError("get_provider needs a store or an engine")
+        from app.amber.sql_store import SqlAmberStore
+
+        store = SqlAmberStore(engine)
 
     try:
         if os.getenv("ANTHROPIC_API_KEY"):

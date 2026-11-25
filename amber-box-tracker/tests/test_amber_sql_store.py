@@ -117,3 +117,16 @@ def test_repeated_confirm_is_idempotent_new_note_is_new_report(store: SqlAmberSt
     with Session(store._engine) as s:
         issues = s.exec(select(models.DeliveryIssue)).all()
         assert [i.damaged_items[0]["note"] for i in issues] == ["dent", "wet box"]
+
+
+def test_get_provider_from_engine_answers_from_the_db(
+        store: SqlAmberStore, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.amber.provider import get_provider
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    provider = get_provider(engine=store._engine)
+    assert provider.name == "offline"
+    assert "Floor 2, shelf L2-B2" in provider.chat("where does BV2401 go?").reply
+    assert provider.chat("BV2401 is damaged: dent").needs_confirmation is True
+    assert tools.list_open_alerts(store)["count"] == 0
