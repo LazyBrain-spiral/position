@@ -17,12 +17,12 @@ Usage:
   python firmware/shelf-light/sim.py --demo
 """
 
-import sys
-import time
 import argparse
 import json
-import urllib.request
+import sys
+import time
 import urllib.error
+import urllib.request
 
 # ANSI Color Codes
 RESET = "\033[0m"
@@ -47,8 +47,8 @@ def enable_windows_ansi():
             import ctypes
             kernel32 = ctypes.windll.kernel32
             kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
-        except Exception:
-            pass
+        except (AttributeError, OSError) as e:
+            log(f"ANSI setup skipped: {e}", DIM)
 
 
 def log(msg: str, color: str = WHITE):
@@ -131,7 +131,7 @@ def poll_server(server: str, device_id: str, wait_sec: int):
                             render_light_action(cmd, color, seconds)
                     else:
                         # Empty response on timeout (normal long poll heartbeat)
-                        log(f"Long-poll ping ok. Waiting for next event...", DIM)
+                        log("Long-poll ping ok. Waiting for next event...", DIM)
 
         except urllib.error.URLError as e:
             consecutive_errors += 1
@@ -142,7 +142,7 @@ def poll_server(server: str, device_id: str, wait_sec: int):
             print("\n")
             log("Simulator stopped by user.", YELLOW)
             break
-        except Exception as ex:
+        except (urllib.error.HTTPError, OSError, TimeoutError, json.JSONDecodeError, KeyError, ValueError) as ex:
             log(f"Poll error: {ex}", RED)
             time.sleep(2)
 
