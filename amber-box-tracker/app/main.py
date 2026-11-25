@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ from app.db import get_engine, init_db
 from app.seed import seed_if_empty
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+logging.basicConfig(level=os.environ.get("ABT_LOG_LEVEL", "INFO").upper())
 log = logging.getLogger("amber.main")
 
 # Live camera worker handles, keyed by camera id (filled when Track 2's
