@@ -44,6 +44,7 @@ def enable_windows_ansi():
     if sys.platform == "win32":
         try:
             import ctypes
+
             kernel32 = ctypes.windll.kernel32
             kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
         except (AttributeError, OSError) as e:
@@ -70,7 +71,7 @@ def render_light_action(cmd: str, color: str, seconds: int):
     elif cmd == "ack" or color == "green":
         header = f"{BG_GREEN}{WHITE}{BOLD} [ACK - CONFIRMED PUT-AWAY] {RESET}"
         bar = f"{GREEN}{BOLD}✔ ✔ ✔ ✔ ✔ ✔ ✔ ✔ ✔ ✔ ✔ ✔{RESET}"
-        log(f"{header} {GREEN}Carton correctly stored. Beacon solid green for {seconds}s{RESET}")
+        log(f"{header} {GREEN}Carton stored. Beacon solid green for {seconds}s{RESET}")
         print(f"       Light Strip: {bar}")
     elif cmd == "off":
         log(f"{DIM}[OFF] Strip cleared. Standby.{RESET}")
@@ -103,18 +104,29 @@ def run_demo_mode():
 
 def poll_server(server: str, device_id: str, wait_sec: int):
     """Long-polls the backend device command queue."""
-    url = f"{server.rstrip('/')}/api/devices/{device_id}/commands?wait={wait_sec}&battery=3.98&rssi=-54"
+    base = server.rstrip("/")
+    url = f"{base}/api/devices/{device_id}/commands?wait={wait_sec}&battery=3.98&rssi=-54"
     log(f"Connecting simulator for {BOLD}{device_id}{RESET} -> {CYAN}{url}{RESET}")
 
     consecutive_errors = 0
+    poll_exceptions = (
+        urllib.error.HTTPError,
+        OSError,
+        TimeoutError,
+        json.JSONDecodeError,
+        KeyError,
+        ValueError,
+    )
 
     while True:
         try:
             req = urllib.request.Request(
                 url,
-                headers={"User-Agent": f"ESP32-ShelfLight-Sim/{device_id}", "Accept": "application/json"}
+                headers={
+                    "User-Agent": f"ESP32-ShelfLight-Sim/{device_id}",
+                    "Accept": "application/json",
+                },
             )
-            # Timeout set slightly higher than server wait parameter
             with urllib.request.urlopen(req, timeout=wait_sec + 5) as resp:
                 if resp.status == 200:
                     consecutive_errors = 0
@@ -129,19 +141,18 @@ def poll_server(server: str, device_id: str, wait_sec: int):
                             seconds = c.get("seconds", 30)
                             render_light_action(cmd, color, seconds)
                     else:
-                        # Empty response on timeout (normal long poll heartbeat)
                         log("Long-poll ping ok. Waiting for next event...", DIM)
 
         except urllib.error.URLError as e:
             consecutive_errors += 1
             if consecutive_errors == 1:
-                log(f"Server offline or unreachable ({e.reason}). Retrying every 3s...", YELLOW)
+                log(f"Server offline ({e.reason}). Retrying...", YELLOW)
             time.sleep(3)
         except KeyboardInterrupt:
             print("\n")
             log("Simulator stopped by user.", YELLOW)
             break
-        except (urllib.error.HTTPError, OSError, TimeoutError, json.JSONDecodeError, KeyError, ValueError) as ex:
+        except poll_exceptions as ex:
             log(f"Poll error: {ex}", RED)
             time.sleep(2)
 
@@ -149,11 +160,30 @@ def poll_server(server: str, device_id: str, wait_sec: int):
 def main():
     enable_windows_ansi()
 
-    parser = argparse.ArgumentParser(description="ESP32-C3 Shelf-Light Terminal Simulator")
-    parser.add_argument("--device", default="shelf-light-01", help="Target device ID (e.g. shelf-light-01)")
-    parser.add_argument("--server", default="http://localhost:8000", help="FastAPI backend host")
-    parser.add_argument("--wait", type=int, default=20, help="Long poll wait seconds (default: 20)")
-    parser.add_argument("--demo", action="store_true", help="Run standalone animation demo loop")
+    parser = argparse.ArgumentParser(
+        description="ESP32-C3 Shelf-Light Terminal Simulator"
+    )
+    parser.add_argument(
+        "--device",
+        default="shelf-light-01",
+        help="Target device ID (e.g. shelf-light-01)",
+    )
+    parser.add_argument(
+        "--server",
+        default="http://localhost:8000",
+        help="FastAPI backend host",
+    )
+    parser.add_argument(
+        "--wait",
+        type=int,
+        default=20,
+        help="Long poll wait seconds (default: 20)",
+    )
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="Run standalone animation demo loop",
+    )
 
     args = parser.parse_args()
 
