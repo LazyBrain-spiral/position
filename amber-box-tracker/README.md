@@ -6,8 +6,8 @@ delivery, damage and cartons that never arrive, and answers questions like "wher
 
 Runs on a normal laptop, CPU only. Sample data only (Harbor Point Medical Office).
 
-> Status: draft written by Track 4. Items marked **pending** depend on other tracks and are
-> corrected as they land. Commands below follow the PRDs, not yet a finished build.
+> Status: Amber, the MCP adapter and the API tests are merged and tested on Python 3.10
+> (107 tests). Not yet checked on Python 3.11, with real cameras, or on the ESP32 hardware.
 
 ## Setup
 
@@ -23,7 +23,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # Windows: copy .env.example .env
 python scripts/setup.py     # downloads weights, creates data/app.db, loads data/seed.json
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --env-file .env
 ```
 
 Open http://localhost:8000 for the dashboard.
@@ -36,7 +36,8 @@ pip uninstall -y opencv-python opencv-python-headless
 pip install --force-reinstall opencv-contrib-python-headless==4.10.0.84
 ```
 
-**Amber keys (optional).** Put `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` in `.env`. With neither set,
+**Amber keys (optional).** Put `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` in `.env`. The app does not read `.env` itself, so start
+uvicorn with `--env-file .env` (as above) or export the variable in your shell. With neither set,
 or if the SDK is missing, Amber uses the offline provider. Keys are never committed.
 
 ## Amber assistant
@@ -57,8 +58,7 @@ Offline phrases (no network): `where is <x>`, `find <x>`, `light up <x>`, `blink
 `<code> is damaged: <note>`, `open alerts`.
 
 Damage needs confirmation. The chat call returns `needs_confirmation: true`. Send the same message
-again with `confirm: true` to record it. The model can never confirm for itself. **Pending**:
-Track 1 to confirm this is the router contract.
+again with `confirm: true` to record it. The model can never confirm for itself.
 
 ## MCP adapter (submission-facing)
 
@@ -68,15 +68,13 @@ which uses `app/alerts.py` and `app/devices.py`) and wraps the result as
 `{answer, confidence, sources, needs_human_review, note}`. Confidence and review rules are in
 `app/amber/envelope.py`.
 
-**Transport.** `app/amber/mcp_http.py` mounts it inside the FastAPI process as `POST /mcp`
-(JSON-RPC over HTTP). It must run inside the app so shelf-light commands and live alerts share the
-app's in-memory queues. Add to `app/main.py`:
+**Transport.** `app/amber/mcp_http.py` is mounted in `app/main.py` as `POST /mcp` (JSON-RPC over
+HTTP, no SSE, no sessions). It runs inside the app so shelf-light commands and live alerts share the
+app's in-memory queues.
 
-```python
-from app.amber.mcp_http import build_router
-from app.amber.sql_store import SqlAmberStore
-app.include_router(build_router(lambda: SqlAmberStore(get_engine())))
-```
+**Client check.** The official Python MCP SDK 1.30.0 (`streamablehttp_client`) was run once against a
+live uvicorn on Python 3.10: `initialize`, `tools/list` (7 tools) and two `tools/call` requests
+worked. Other SDK versions and other MCP clients are untested.
 
 `python -m app.amber.mcp_server` (stdio) exists for local development only. It runs in a separate
 process, so lights and live alerts do not reach the running app. Do not use it for the submission.
@@ -84,7 +82,8 @@ process, so lights and live alerts do not reach the running app. Do not use it f
 Tools: `find_carton`, `where_does_this_go`, `delivery_status`, `report_damage`,
 `list_open_alerts`, and the optional `list_cartons` and `resolve_alert` (needs a note written by a
 person). `report_damage` never records through MCP: it returns `needs_human_review: true` and a
-person confirms in the app. `delivery_status` reads seen cartons from stored sightings.
+person confirms in the app. `delivery_status` counts a carton as seen if it has a sighting or a received time, the same rule as
+`/api/deliveries`.
 
 ## Demo with no hardware (3 minutes)
 
