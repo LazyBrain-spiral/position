@@ -43,7 +43,7 @@ def _one(server: AmberMcpServer, msg: Any) -> dict[str, Any] | None:
     msg_id = msg.get("id")
     try:
         result = server.handle(msg)
-    except Exception as exc:  # report to the client, never crash the app
+    except Exception as exc:  # noqa: BLE001 - JSON-RPC error boundary: any handler failure becomes an error reply
         return _error(msg_id, METHOD_ERROR, str(exc)) if msg_id is not None else None
     if result is None or msg_id is None:
         return None

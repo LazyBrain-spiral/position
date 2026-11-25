@@ -136,7 +136,7 @@ def serve(server: AmberMcpServer, lines: Any = None, out: Any = None) -> None:
             reply: dict[str, Any] | None = (
                 {"jsonrpc": "2.0", "id": msg["id"], "result": result}
                 if result is not None and msg.get("id") is not None else None)
-        except Exception as exc:  # report to the client instead of dying
+        except Exception as exc:  # noqa: BLE001 - JSON-RPC error boundary (dev stdio loop)
             reply = ({"jsonrpc": "2.0", "id": msg.get("id"),
                       "error": {"code": -32601, "message": str(exc)}}
                      if msg.get("id") is not None else None)

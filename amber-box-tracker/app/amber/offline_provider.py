@@ -10,13 +10,17 @@ from app.amber.tools import AmberStore
 
 _CODE = r"(?:KYC1:)?[A-Z0-9]{6}"
 _DEL = r"DEL-\d+"
-_IT = re.compile(r"^(?:please\s+)?(?:light|show|blink)(?: it| that| this)?(?: up)?[?.!]*$", re.I)
-_LIGHT = re.compile(r"^(?:please\s+)?(?:light up|blink|show(?: me)?)\s+(.+?)[?.!]*$", re.I)
-_GOES = re.compile(rf"where does\s+({_CODE})\s+go", re.I)
-_STATUS = re.compile(rf"status of\s+({_DEL})", re.I)
-_DAMAGED = re.compile(rf"^({_CODE})\s+is\s+damaged(?:[:,.]?\s*(.*))?$", re.I)
-_ALERTS = re.compile(r"open alerts|any alerts|what alerts", re.I)
-_FIND = re.compile(r"^(?:where(?:'s| is| are)|find)\s+(.+?)[?.!]*$", re.I)
+_IT = re.compile(
+    r"^(?:please\s+)?(?:light|show|blink)(?: it| that| this)?(?: up)?[?.!]*$", re.IGNORECASE
+)
+_LIGHT = re.compile(
+    r"^(?:please\s+)?(?:light up|blink|show(?: me)?)\s+(.+?)[?.!]*$", re.IGNORECASE
+)
+_GOES = re.compile(rf"where does\s+({_CODE})\s+go", re.IGNORECASE)
+_STATUS = re.compile(rf"status of\s+({_DEL})", re.IGNORECASE)
+_DAMAGED = re.compile(rf"^({_CODE})\s+is\s+damaged(?:[:,.]?\s*(.*))?$", re.IGNORECASE)
+_ALERTS = re.compile(r"open alerts|any alerts|what alerts", re.IGNORECASE)
+_FIND = re.compile(r"^(?:where(?:'s| is| are)|find)\s+(.+?)[?.!]*$", re.IGNORECASE)
 
 
 class OfflineAmberProvider(AmberProvider):

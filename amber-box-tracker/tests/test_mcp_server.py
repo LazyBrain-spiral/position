@@ -13,9 +13,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from app.amber.envelope import find_confidence  # noqa: E402
-from app.amber.mcp_server import TOOLS, AmberMcpServer, serve  # noqa: E402
-from test_amber import FakeStore  # noqa: E402
+from app.amber.envelope import find_confidence
+from app.amber.mcp_server import TOOLS, AmberMcpServer, serve
+from test_amber import FakeStore
 
 
 @pytest.fixture()

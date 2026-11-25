@@ -11,11 +11,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.amber import tools  # noqa: E402
-from app.amber.anthropic_provider import AnthropicProvider  # noqa: E402
-from app.amber.offline_provider import OfflineAmberProvider  # noqa: E402
-from app.amber.provider import get_provider  # noqa: E402
-from app.amber.tools import AlertView, CartonView, DeliveryView  # noqa: E402
+from app.amber import tools
+from app.amber.anthropic_provider import AnthropicProvider
+from app.amber.offline_provider import OfflineAmberProvider
+from app.amber.provider import get_provider
+from app.amber.tools import AlertView, CartonView, DeliveryView
 
 
 def _c(code: str, po: str, part: str, name: str, shelf: str, level: int,

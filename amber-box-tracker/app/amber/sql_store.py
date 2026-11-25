@@ -25,7 +25,7 @@ LOCATE_SECONDS = 30
 
 def _bare(code: str) -> str:
     code = code.strip().upper()
-    return code[len(PREFIX):] if code.startswith(PREFIX) else code
+    return code.removeprefix(PREFIX)
 
 
 class SqlAmberStore:

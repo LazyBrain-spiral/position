@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -31,7 +31,8 @@ def _sight(store: SqlAmberStore, bare: str) -> None:
     with Session(store._engine) as s:
         c = s.exec(select(models.Carton).where(models.Carton.label_code == bare)).one()
         s.add(models.Sighting(carton_id=c.id, camera_id="CAM-POV", source="phone",
-                              seen_at=datetime.utcnow()))
+                              seen_at=datetime.now(timezone.utc).replace(tzinfo=None),  # noqa: UP017 - runs on py3.10 too
+                              ))
         s.commit()
 
 
