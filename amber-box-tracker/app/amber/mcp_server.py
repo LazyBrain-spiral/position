@@ -37,6 +37,9 @@ TOOLS: list[dict[str, Any]] = [
      "inputSchema": _schema({"carton_code": _STR, "note": _STR}, ["carton_code"])},
     {"name": "list_open_alerts", "description": "Open alerts: wrong floor, wrong shelf, not "
      "arrived, short delivery, damaged.", "inputSchema": _schema({}, [])},
+    {"name": "resolve_alert", "description": "[optional] Close an alert. Needs a note written by "
+     "a person.", "inputSchema": _schema({"alert_id": {"type": "integer"}, "note": _STR},
+                                         ["alert_id", "note"])},
     {"name": "list_cartons", "description": "[optional] Every carton with status and destination.",
      "inputSchema": _schema({}, [])},
 ]
@@ -79,6 +82,11 @@ class AmberMcpServer:
         if name == "list_open_alerts":
             r = tools.list_open_alerts(s)
             return envelope(r, 1.0, [f"alert:{a['id']}" for a in r["alerts"]], False)
+        if name == "resolve_alert":
+            r = tools.resolve_alert(s, int(args["alert_id"]), str(args["note"]))
+            if not r["resolved"]:
+                return envelope(r, 0.0, [], True, r.get("error", "No open alert with that id."))
+            return envelope(r, 1.0, [f"alert:{r['alert_id']}"], False)
         if name == "list_cartons":
             rows = [tools.summarize(c) for c in s.list_cartons()]
             return envelope({"count": len(rows), "cartons": rows}, 1.0,

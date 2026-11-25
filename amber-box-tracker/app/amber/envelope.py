@@ -18,8 +18,12 @@ delivery_status
 report_damage
   - never records through MCP. It always returns needs_confirmation and needs_human_review true;
     a person confirms in the app (`/api/amber/chat` with confirm).
+resolve_alert (optional)
+  - needs a non-empty human note. Empty note or unknown alert: 0.0 and needs_human_review true.
 list_open_alerts, list_cartons
   - database read: 1.0, needs_human_review false.
+Unknown or malformed carton codes are never stored or guessed: the answer says not found and
+needs_human_review is true.
 sources are database references like "carton:KYC1:BV2401", "delivery:DEL-2211", "alert:12".
 """
 

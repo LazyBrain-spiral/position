@@ -48,6 +48,7 @@ class AmberStore(Protocol):
     def open_alerts(self) -> list[AlertView]: ...
     def locate(self, code: str) -> dict[str, Any]: ...
     def create_damage(self, code: str, note: str) -> int: ...
+    def resolve_alert(self, alert_id: int, note: str) -> bool: ...
 
 
 def normalize_code(text: str) -> str:
@@ -140,3 +141,10 @@ def list_open_alerts(store: AmberStore) -> dict[str, Any]:
     alerts = store.open_alerts()
     return {"count": len(alerts),
             "alerts": [{"id": a.id, "type": a.type, "message": a.message} for a in alerts]}
+
+
+def resolve_alert(store: AmberStore, alert_id: int, note: str) -> dict[str, Any]:
+    """Close an alert. A human note is required, an empty note is refused."""
+    if not note.strip():
+        return {"resolved": False, "error": "A human note is required to resolve an alert."}
+    return {"resolved": store.resolve_alert(alert_id, note.strip()), "alert_id": alert_id}

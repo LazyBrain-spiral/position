@@ -35,6 +35,7 @@ class FakeStore:
         ]
         self.located: list[str] = []
         self.damaged: list[tuple[str, str]] = []
+        self.resolved: list[tuple[int, str]] = []
 
     def list_cartons(self) -> list[CartonView]:
         return self.cartons
@@ -54,6 +55,10 @@ class FakeStore:
     def locate(self, code: str) -> dict[str, Any]:
         self.located.append(code)
         return {"queued": True, "code": code}
+
+    def resolve_alert(self, alert_id: int, note: str) -> bool:
+        self.resolved.append((alert_id, note))
+        return alert_id == 1
 
     def create_damage(self, code: str, note: str) -> int:
         self.damaged.append((code, note))

@@ -113,8 +113,27 @@ def test_stdio_roundtrip(server: AmberMcpServer) -> None:
     serve(server, lines, out)
     replies = [json.loads(x) for x in out.getvalue().splitlines()]
     assert [r["id"] for r in replies] == [1, 2, 3, 4, None]
-    assert len(replies[1]["result"]["tools"]) == 6
+    assert len(replies[1]["result"]["tools"]) == 7
     body = json.loads(replies[2]["result"]["content"][0]["text"])
     assert body["answer"]["count"] == 1
     assert replies[3]["result"]["isError"] is True
     assert replies[4]["error"]["code"] == -32700
+
+
+def test_resolve_requires_human_note(server: AmberMcpServer, store: FakeStore) -> None:
+    empty = server.call("resolve_alert", {"alert_id": 1, "note": "   "})
+    assert empty["needs_human_review"] is True and store.resolved == []
+    ok = server.call("resolve_alert", {"alert_id": 1, "note": " moved to L2-B2 "})
+    assert ok["answer"]["resolved"] is True and ok["needs_human_review"] is False
+    assert store.resolved == [(1, "moved to L2-B2")]
+    assert server.call("resolve_alert", {"alert_id": 9, "note": "x"})["needs_human_review"]
+
+
+def test_unknown_or_malformed_codes_are_rejected_not_stored(
+        server: AmberMcpServer, store: FakeStore) -> None:
+    for code in ("KYC1:ZZZZZZ", "garbage", "KYC1:", ""):
+        w = server.call("where_does_this_go", {"carton_code": code})
+        assert w["needs_human_review"] is True and w["answer"]["found"] is False
+        d = server.call("report_damage", {"carton_code": code})
+        assert d["needs_human_review"] is True
+    assert store.damaged == [] and store.resolved == []
