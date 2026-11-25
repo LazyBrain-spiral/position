@@ -69,3 +69,15 @@ def test_report_short_delivery_dedups_alert_keeps_issues(session):
     assert alert1.type == "short_delivery"
     assert alert1.delivery_id == "DEL-2211"
     assert "DM0402" in alert1.message
+
+
+def test_report_damage_exact_duplicate_is_idempotent(session):
+    carton = get_carton(session)
+    issue1, alert1 = alerts.report_damage(session, carton, "crushed corner")
+    issue2, alert2 = alerts.report_damage(session, carton, "crushed corner")
+    assert issue2.id == issue1.id  # retried Confirm reuses the row
+    assert alert2.id == alert1.id
+    issues = session.exec(
+        select(DeliveryIssue).where(DeliveryIssue.delivery_id == carton.delivery_id)
+    ).all()
+    assert len(issues) == 1

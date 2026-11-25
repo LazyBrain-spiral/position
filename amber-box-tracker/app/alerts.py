@@ -165,7 +165,28 @@ def report_damage(
 ) -> tuple[DeliveryIssue, Alert]:
     """Track 1 owns DeliveryIssue (PRD-01 1.3): record the damaged item and
     raise the paired `damaged` alert atomically. Callers: mobile damage
-    endpoint and Amber's report_damage tool (after its confirm step)."""
+    endpoint and Amber's report_damage tool (after its confirm step).
+
+    Idempotent per report: an identical report (same carton, same note)
+    returns the existing issue row instead of duplicating - a Confirm
+    retried by the UI or a tool replay is safe. A genuinely new damage
+    report has a different note and records a new row.
+    """
+    for issue in session.exec(
+        select(DeliveryIssue).where(DeliveryIssue.delivery_id == carton.delivery_id)
+    ).all():
+        for existing in issue.damaged_items:
+            if existing.get("label_code") == carton.label_code and existing.get("note") == note:
+                alert, _ = create_alert(
+                    session,
+                    "damaged",
+                    f"Box {carton.label_code} ({carton.item_name}) reported damaged: {note}",
+                    carton_id=carton.id,
+                    delivery_id=carton.delivery_id,
+                    snapshot_path=snapshot_path,
+                    publish=publish,
+                )
+                return issue, alert
     item: dict[str, Any] = {"label_code": carton.label_code, "note": note}
     if snapshot_path:
         item["snapshot_path"] = snapshot_path
