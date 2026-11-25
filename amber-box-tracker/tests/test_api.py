@@ -154,8 +154,12 @@ def test_carton_labels_pdf(client):
     assert response.content.startswith(b"%PDF")
 
 
-def test_amber_chat_503_until_provider_lands(client):
+def test_amber_chat_returns_provider_contract(client):
+    """Track 4's provider (PR #3) answers /api/amber/chat with the chat
+    contract: reply, tool_calls, needs_confirmation."""
     response = client.post("/api/amber/chat", json={"message": "where is BV2401"})
-    assert response.status_code == 503
+    assert response.status_code == 200
     body = response.json()
-    assert body["detail"]["needs_human_review"] is True
+    assert isinstance(body["reply"], str) and body["reply"]
+    assert isinstance(body["tool_calls"], list)
+    assert body["needs_confirmation"] is False

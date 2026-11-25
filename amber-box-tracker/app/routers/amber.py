@@ -32,4 +32,4 @@ def chat(body: ChatBody, session: SessionDep):
             ),
         )
     provider = get_provider(engine=get_engine())
-    return provider.chat(body.message, confirm=body.confirm)
+    return provider.chat(body.message, confirm=bool(body.confirm))
