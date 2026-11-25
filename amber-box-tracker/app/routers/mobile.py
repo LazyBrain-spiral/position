@@ -15,37 +15,104 @@ from sqlmodel import Session, select
 from app import alerts
 from app.db import SessionDep, get_engine
 from app.main import BASE_DIR, envelope, get_settings
-from app.models import Camera, Carton, Delivery, utcnow
+from app.models import Camera, Carton, Delivery, Shelf, utcnow
 from app.routers.cartons import normalize_code
 
 router = APIRouter(tags=["mobile"])
 
 
-def _pipeline():
-    try:
-        from app.vision import pipeline
+_decoder = None
 
-        return pipeline
+
+def _qr_decoder():
+    """Shared Track-2 QRDecoder (lazy: cv2 is optional outside vision runs)."""
+    global _decoder
+    if _decoder is None:
+        try:
+            from app.vision.qr import QRDecoder
+        except ImportError:
+            return None
+        _decoder = QRDecoder(wechat_dir=BASE_DIR / "models" / "wechat")
+    return _decoder
+
+
+def _extract_label_codes(video_path: str, max_frames: int = 30) -> list[str] | None:
+    """Sample a POV clip and decode KYC1 carton codes via Track 2's QRDecoder.
+
+    Returns None when vision deps are unavailable, otherwise the sorted unique
+    bare codes found (possibly empty).
+    """
+    try:
+        import cv2
     except ImportError:
         return None
+    decoder = _qr_decoder()
+    if decoder is None:
+        return None
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        return None
+    codes: set[str] = set()
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
+    step = max(1, total // max_frames)
+    idx = 0
+    frames_read = 0
+    while True:
+        ok, frame = cap.read()
+        if not ok:
+            break
+        if idx % step == 0:
+            frames_read += 1
+            for qr in decoder.decode_full_frame(frame):
+                codes.add(normalize_code(qr.code))
+        idx += 1
+    cap.release()
+    # An unreadable clip is not evidence of a short delivery: report not-scanned.
+    if frames_read == 0:
+        return None
+    return sorted(codes)
+
+
+def _decode_pov_frame(frame_bytes: bytes) -> dict:
+    """Live POV scan: decode one JPEG/PNG frame, answer where the carton goes."""
+    decoder = _qr_decoder()
+    if decoder is None:
+        return {"carton": None, "note": "vision pipeline not yet integrated"}
+    try:
+        import cv2
+        import numpy as np
+
+        frame = cv2.imdecode(np.frombuffer(frame_bytes, np.uint8), cv2.IMREAD_COLOR)
+    except ImportError:
+        return {"carton": None, "note": "vision pipeline not yet integrated"}
+    if frame is None:
+        return {"carton": None, "note": "could not decode frame"}
+    codes = [normalize_code(qr.code) for qr in decoder.decode_full_frame(frame)]
+    if not codes:
+        return {"carton": None, "note": "no label found"}
+    code = codes[0]
+    with Session(get_engine()) as session:
+        carton = session.exec(select(Carton).where(Carton.label_code == code)).first()
+        if carton is None:
+            return {"carton": code, "note": "unknown carton"}
+        shelf = session.get(Shelf, carton.dest_shelf_id)
+        return {
+            "carton": code,
+            "item_name": carton.item_name,
+            "dest_level": carton.dest_level,
+            "dest_shelf": shelf.code if shelf else None,
+        }
 
 
 @router.websocket("/ws/pov")
 async def pov_ws(websocket: WebSocket):
     await websocket.accept()
-    pipeline = _pipeline()
-    try:
-        while True:
+    while True:
+        try:
             frame = await websocket.receive_bytes()
-            if pipeline is None:
-                await websocket.send_json(
-                    {"carton": None, "note": "vision pipeline not yet integrated"}
-                )
-                continue
-            result = pipeline.decode_frame(frame, camera_id="CAM-POV")
-            await websocket.send_json(result)
-    except Exception:  # noqa: BLE001 - client disconnect ends the socket
-        return
+        except Exception:  # noqa: BLE001 - client disconnect ends the socket
+            return
+        await websocket.send_json(_decode_pov_frame(frame))
 
 
 @router.post("/api/mobile/pov-upload/{delivery_id}")
@@ -65,19 +132,18 @@ async def pov_upload(
     session.add(delivery)
     session.commit()
 
-    pipeline = _pipeline()
-    if pipeline is None:
+    codes = _extract_label_codes(str(path))
+    if codes is None:
         return envelope(
             answer={"delivery_id": delivery_id, "proof": delivery.proof_video_path},
             confidence=0.0,
             sources=[f"delivery:{delivery_id}"],
             needs_human_review=True,
-            note="proof stored; vision pipeline not yet integrated, cartons not scanned",
+            note="proof stored; cartons not scanned (vision unavailable or unreadable video)",
         )
 
     # Sightings first, status after (alignment decision).
     engine = get_engine()
-    codes = pipeline.extract_label_codes(str(path))
     pov = session.get(Camera, "CAM-POV")
     with Session(engine) as write_session:
         from app.rules import record_sighting

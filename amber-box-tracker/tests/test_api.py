@@ -163,3 +163,34 @@ def test_amber_chat_returns_provider_contract(client):
     assert isinstance(body["reply"], str) and body["reply"]
     assert isinstance(body["tool_calls"], list)
     assert body["needs_confirmation"] is False
+
+
+def test_pov_upload_scans_proof_and_marks_seen(client, tmp_path):
+    """Positive POV path: a clip carrying KYC1:BV2401 counts that carton as seen."""
+    cv2 = pytest.importorskip("cv2")
+    qrcode = pytest.importorskip("qrcode")
+
+    qr = qrcode.make("KYC1:BV2401").convert("RGB")
+    frame = cv2.cvtColor(
+        __import__("numpy").array(qr.resize((480, 480))), cv2.COLOR_RGB2BGR
+    )
+    clip = tmp_path / "proof.mp4"
+    writer = cv2.VideoWriter(
+        str(clip), cv2.VideoWriter_fourcc(*"mp4v"), 10.0, (480, 480)
+    )
+    if not writer.isOpened():
+        pytest.skip("cv2 VideoWriter unavailable in this environment")
+    for _ in range(10):
+        writer.write(frame)
+    writer.release()
+
+    with open(clip, "rb") as fh:
+        response = client.post(
+            "/api/mobile/pov-upload/DEL-2211",
+            files={"file": ("proof.mp4", fh, "video/mp4")},
+        )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["confidence"] == 1.0
+    assert "BV2401" in body["answer"]["seen"]
+    assert "BV2401" not in body["answer"]["missing"]
