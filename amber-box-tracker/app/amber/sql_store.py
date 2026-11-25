@@ -65,7 +65,8 @@ class SqlAmberStore:
             return DeliveryView(
                 delivery_id,
                 tuple(PREFIX + c.label_code for c in cartons),
-                tuple(PREFIX + c.label_code for c in cartons if c.id in seen_ids))
+                tuple(PREFIX + c.label_code for c in cartons
+                      if c.id in seen_ids or c.received_at is not None))
 
     def open_alerts(self) -> list[AlertView]:
         with Session(self._engine) as s:
