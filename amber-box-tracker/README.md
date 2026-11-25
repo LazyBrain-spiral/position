@@ -38,7 +38,7 @@ pip install --force-reinstall opencv-contrib-python-headless==4.10.0.84
 
 **Amber keys (optional).** Put `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` in `.env`. The app does not read `.env` itself, so start
 uvicorn with `--env-file .env` (as above) or export the variable in your shell. With neither set,
-or if the SDK is missing, Amber uses the offline provider. Keys are never committed.
+or if the SDK is missing, Amber uses the offline provider. Gemini defaults to `gemini-3.8-flash`; set `GEMINI_MODEL` to use another model. Keys are never committed.
 
 ## Amber assistant
 
