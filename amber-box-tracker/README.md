@@ -62,18 +62,29 @@ Track 1 to confirm this is the router contract.
 
 ## MCP adapter (submission-facing)
 
-`app/amber/mcp_server.py` is a thin MCP server over stdio (standard library only). It adds no
-storage or rules of its own: each tool calls `app/amber/tools.py` over the app's SQLite data and
-wraps the result as `{answer, confidence, sources, needs_human_review, note}`. Rules for
-confidence and the review flag are in `app/amber/envelope.py`.
+`app/amber/mcp_server.py` is a thin MCP adapter (standard library only). It adds no storage or
+rules: each tool calls `app/amber/tools.py` over the app's SQLite data (`app/amber/sql_store.py`,
+which uses `app/alerts.py` and `app/devices.py`) and wraps the result as
+`{answer, confidence, sources, needs_human_review, note}`. Confidence and review rules are in
+`app/amber/envelope.py`.
+
+**Transport.** `app/amber/mcp_http.py` mounts it inside the FastAPI process as `POST /mcp`
+(JSON-RPC over HTTP). It must run inside the app so shelf-light commands and live alerts share the
+app's in-memory queues. Add to `app/main.py`:
+
+```python
+from app.amber.mcp_http import build_router
+from app.amber.sql_store import SqlAmberStore
+app.include_router(build_router(lambda: SqlAmberStore(get_engine())))
+```
+
+`python -m app.amber.mcp_server` (stdio) exists for local development only. It runs in a separate
+process, so lights and live alerts do not reach the running app. Do not use it for the submission.
 
 Tools: `find_carton`, `where_does_this_go`, `delivery_status`, `report_damage`,
-`list_open_alerts`, and the optional `list_cartons`. `report_damage` never records through MCP:
-it returns `needs_human_review: true` and a person confirms in the app. `delivery_status` reads
-seen cartons from stored sightings, not from the caller.
-
-**Pending Track 1**: the SQLite-backed `AmberStore` (`build_store`) lands once `models.py` and
-`db.py` are on `main`. Until then the adapter runs only against the test store.
+`list_open_alerts`, and the optional `list_cartons` and `resolve_alert` (needs a note written by a
+person). `report_damage` never records through MCP: it returns `needs_human_review: true` and a
+person confirms in the app. `delivery_status` reads seen cartons from stored sightings.
 
 ## Demo with no hardware (3 minutes)
 

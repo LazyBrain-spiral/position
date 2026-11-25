@@ -1,8 +1,12 @@
-"""Thin MCP adapter (stdio, JSON-RPC 2.0, newline-delimited, standard library only).
+"""Thin MCP adapter core (JSON-RPC 2.0, standard library only).
 
 It adds no logic or storage of its own: every tool calls `app.amber.tools` over an `AmberStore`
 (the app's SQLite data), then wraps the result in the envelope from `envelope.py`.
-Use `python -m app.amber.mcp_server` once Track 1's store adapter exists (see `build_store`).
+
+Submission transport: `app/amber/mcp_http.py` mounts this inside the FastAPI process, so light
+commands and SSE alerts share the app's in-memory queues.
+The stdio loop below (`python -m app.amber.mcp_server`) is a DEV CONVENIENCE ONLY. It runs in a
+separate process, so lights and live alerts do not reach the running app. Not for the submission.
 """
 
 from __future__ import annotations
@@ -142,8 +146,13 @@ def serve(server: AmberMcpServer, lines: Any = None, out: Any = None) -> None:
 
 
 def build_store() -> AmberStore:
-    """Return the app's SQLite-backed store. Pending Track 1's models.py / db.py."""
-    raise NotImplementedError("AmberStore over the SQLModel tables lands with Track 1's models")
+    """The app's SQLite-backed store (dev stdio use)."""
+    from app.amber.sql_store import SqlAmberStore
+    from app.db import get_engine, init_db
+
+    engine = get_engine()
+    init_db(engine)
+    return SqlAmberStore(engine)
 
 
 def main() -> None:
