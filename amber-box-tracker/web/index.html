@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Box Tracker — Kaya Delivery & Storage Operations</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+</head>
+<body>
+
+  <!-- ==========================================
+       HEADER & NAVIGATION
+       ========================================== -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">A</div>
+      <div>
+        <h1 class="brand-title">AMBER BOX TRACKER</h1>
+        <div class="brand-subtitle">Kaya Delivery & Storage Systems</div>
+      </div>
+    </div>
+
+    <!-- 5 Dashboard Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab-btn active" data-tab="live">
+        <span>📹 Live</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="alerts">
+        <span>⚠️ Alerts</span>
+        <span class="badge-counter" id="alertsBadgeCount">0</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="cartons">
+        <span>📦 Cartons</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="receive">
+        <span>📥 Receive</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="find">
+        <span>🔍 Find & Grid</span>
+      </button>
+    </nav>
+
+    <!-- Header Status & Clock -->
+    <div class="header-status-area">
+      <div class="clock-display" id="liveClock">00:00:00 UTC</div>
+      <div class="status-pill live" id="systemStatusPill">
+        <span class="status-dot pulsing"></span>
+        <span>SYSTEM ONLINE</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================
+       MAIN DUAL-PANEL LAYOUT
+       ========================================== -->
+  <div class="main-layout">
+
+    <!-- LEFT AREA: TABS CONTENT -->
+    <main class="tab-content-area">
+
+      <!-- ==========================================
+           TAB 1: LIVE CAMERAS & REALTIME ALERTS
+           ========================================== -->
+      <section id="tab-live" class="tab-pane active">
+        <div class="tab-header-row">
+          <div>
+            <h2 class="tab-title">CCTV & Gate Feeds</h2>
+            <p style="color: var(--text-muted); font-size: 13px;">Real-time multi-camera AI streams with automated QR and ArUco recognition</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <a href="/m" target="_blank" class="btn btn-outline btn-sm">📱 Open Mobile / Glasses POV (/m)</a>
+            <button class="btn btn-outline btn-sm" id="refreshCamerasBtn">🔄 Reload Streams</button>
+          </div>
+        </div>
+
+        <!-- Camera Tiles Grid -->
+        <div class="cameras-grid" id="camerasGrid">
+          <!-- Populated dynamically by app.js -->
+        </div>
+
+        <!-- Toast Notification Container (slides in top right) -->
+        <div class="toast-container" id="toastContainer"></div>
+      </section>
+
+      <!-- ==========================================
+           TAB 2: ALERTS LIST
+           ========================================== -->
+      <section id="tab-alerts" class="tab-pane">
+        <div class="tab-header-row">
+          <div>
+            <h2 class="tab-title">Operational Alerts</h2>
+            <p style="color: var(--text-muted); font-size: 13px;">Automated rule infractions, misplacements, delivery discrepancies & damage reports</p>
+          </div>
+          <button class="btn btn-outline btn-sm" id="refreshAlertsBtn">🔄 Refresh Alerts</button>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label">Filter Type:</span>
+            <select class="select-input" id="alertTypeFilter">
+              <option value="all">All Alert Types</option>
+              <option value="wrong_floor">Wrong Floor</option>
+              <option value="wrong_shelf">Wrong Shelf</option>
+              <option value="not_arrived">Not Arrived</option>
+              <option value="short_delivery">Short Delivery</option>
+              <option value="damaged">Damaged Box</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">Status:</span>
+            <select class="select-input" id="alertStatusFilter">
+              <option value="open">Open Only</option>
+              <option value="resolved">Resolved Only</option>
+              <option value="all">All Statuses</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Alerts Cards List -->
+        <div class="alerts-list" id="alertsList">
+          <!-- Populated dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- ==========================================
+           TAB 3: CARTONS INVENTORY
+           ========================================== -->
+      <section id="tab-cartons" class="tab-pane">
+        <div class="tab-header-row">
+          <div>
+            <h2 class="tab-title">Carton Registry</h2>
+            <p style="color: var(--text-muted); font-size: 13px;">Complete tracking history with end-to-end sighting timeline drawer</p>
+          </div>
+          <input type="text" class="text-input" id="cartonSearchInput" placeholder="Filter by Code, PO or Item..." style="width: 280px;">
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-container">
+          <table class="data-table" id="cartonsTable">
+            <thead>
+              <tr>
+                <th>Carton Code</th>
+                <th>Item Name / Description</th>
+                <th>PO Number</th>
+                <th>Destination</th>
+                <th>Status</th>
+                <th>Last Seen Location</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cartonsTableBody">
+              <!-- Populated dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           TAB 4: RECEIVE DELIVERIES
+           ========================================== -->
+      <section id="tab-receive" class="tab-pane">
+        <div class="tab-header-row">
+          <div>
+            <h2 class="tab-title">Gate Receiving & Check-in</h2>
+            <p style="color: var(--text-muted); font-size: 13px;">Select scheduled delivery batches, verify manifests, print labels and confirm intake</p>
+          </div>
+        </div>
+
+        <div class="receive-grid">
+          <!-- Left: Delivery Selection & Actions -->
+          <div class="receive-sidebar">
+            <div class="card">
+              <div class="card-title">Select Delivery</div>
+              <select class="select-input" id="deliverySelect" style="width: 100%; margin-bottom: 14px;">
+                <!-- Populated dynamically -->
+              </select>
+
+              <div id="deliveryMetaCard" style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+                <!-- Delivery details -->
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <a href="#" id="printLabelsBtn" target="_blank" class="btn btn-outline" style="width: 100%;">
+                  🏷️ Print Carton & Shelf Labels (PDF)
+                </a>
+                <button id="markReceivedBtn" class="btn btn-success" style="width: 100%;">
+                  ✅ Mark Received (Gate In)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Delivery Cartons Manifest -->
+          <div class="card">
+            <div class="card-title">
+              <span>Expected Cartons Manifest</span>
+              <span id="manifestSummaryBadge" class="status-pill warning">6 Items Expected</span>
+            </div>
+            <div class="table-container" style="border: none;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Item Description</th>
+                    <th>Destination</th>
+                    <th>Current Status</th>
+                  </tr>
+                </thead>
+                <tbody id="receiveManifestBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           TAB 5: FIND & VIRTUAL SHELF GRID
+           ========================================== -->
+      <section id="tab-find" class="tab-pane">
+        <div class="find-search-hero">
+          <h2 class="tab-title" style="margin-bottom: 8px;">Find Item or Carton</h2>
+          <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 16px;">
+            Search by part name, PO#, or carton code. Amber will locate the item and trigger the shelf light beacon.
+          </p>
+
+          <div class="search-bar-huge">
+            <input type="text" class="search-input-huge" id="findSearchInput" placeholder="Try 'ball valve', 'BV2401', or 'PO-9912'...">
+            <button class="mic-btn" id="findMicBtn" title="Hold/click to speak search query">🎤</button>
+            <button class="btn btn-primary" id="findSubmitBtn" style="padding: 0 20px; font-size: 15px;">Search</button>
+          </div>
+        </div>
+
+        <!-- Search Results -->
+        <div id="findResultsContainer" style="display: none; margin-bottom: 24px;">
+          <h3 style="font-size: 15px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px;">Search Matches</h3>
+          <div id="findResultsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px;"></div>
+        </div>
+
+        <!-- Virtual Shelf Grid -->
+        <div class="virtual-grid-container">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+            <div>
+              <h3 style="font-size: 18px; font-weight: 700;">🏢 Virtual Shelf Grid & Hardware Light Status</h3>
+              <p style="color: var(--text-muted); font-size: 12.5px;">Synchronized with physical ESP32 shelf-light beacons (<span style="color: var(--color-blue); font-weight:600;">Blue</span> = Target Locate, <span style="color: var(--color-red); font-weight:600;">Red</span> = Misplacement Alert, <span style="color: var(--color-green); font-weight:600;">Green</span> = Put-away Confirmed)</p>
+            </div>
+            <button class="btn btn-outline btn-sm" id="testBlinkAllBtn">⚡ Test Grid Blink</button>
+          </div>
+
+          <!-- Floor 2 -->
+          <div class="floor-section">
+            <div class="floor-title">
+              <span>📍 Floor 2 (Level 2 Facility)</span>
+            </div>
+            <div class="shelf-slots-row">
+              <div class="shelf-slot" id="shelf-L2-B1" data-shelf="L2-B1">
+                <div class="shelf-slot-code">L2-B1</div>
+                <div class="shelf-slot-name">Bay 1 · Heavy Valving</div>
+                <div class="shelf-light-indicator"></div>
+              </div>
+              <div class="shelf-slot" id="shelf-L2-B2" data-shelf="L2-B2">
+                <div class="shelf-slot-code">L2-B2</div>
+                <div class="shelf-slot-name">Bay 2 · General Pipework</div>
+                <div class="shelf-light-indicator"></div>
+              </div>
+              <div class="shelf-slot" id="shelf-L2-B3" data-shelf="L2-B3">
+                <div class="shelf-slot-code">L2-B3</div>
+                <div class="shelf-slot-name">Bay 3 · High Pressure Flanges</div>
+                <div class="shelf-light-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floor 3 -->
+          <div class="floor-section">
+            <div class="floor-title">
+              <span>📍 Floor 3 (Level 3 Store)</span>
+            </div>
+            <div class="shelf-slots-row">
+              <div class="shelf-slot" id="shelf-L3-A1" data-shelf="L3-A1">
+                <div class="shelf-slot-code">L3-A1</div>
+                <div class="shelf-slot-name">Aisle A1 · Fasteners & Bolts</div>
+                <div class="shelf-light-indicator"></div>
+              </div>
+              <div class="shelf-slot" id="shelf-L3-A2" data-shelf="L3-A2">
+                <div class="shelf-slot-code">L3-A2</div>
+                <div class="shelf-slot-name">Aisle A2 · Electrical Conduit</div>
+                <div class="shelf-light-indicator"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ==========================================
+         RIGHT AREA: GLOBAL PERSISTENT AMBER PANEL
+         ========================================== -->
+    <aside class="amber-panel">
+      <!-- Amber Header -->
+      <div class="amber-header">
+        <div class="amber-title-group">
+          <div class="amber-avatar">A</div>
+          <div>
+            <div class="amber-name">Amber</div>
+            <div class="amber-subtitle">Site Assistant · AI Agent</div>
+          </div>
+        </div>
+        <div class="amber-settings">
+          <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <input type="checkbox" id="amberSpeakToggle" checked>
+            <span>Speak</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Amber Chat Conversation -->
+      <div class="amber-chat-body" id="amberChatBody">
+        <div class="chat-msg amber">
+          Hello Yashwant! I am Amber, your site warehouse assistant. Ask me where any carton belongs, to locate items, report damage, or check delivery status.
+        </div>
+      </div>
+
+      <!-- Amber Input Footer -->
+      <div class="amber-chat-footer">
+        <form class="amber-input-form" id="amberChatForm">
+          <input type="text" class="amber-input-field" id="amberChatInput" placeholder="Ask Amber (e.g. 'Where does BV2401 go?')">
+          <button type="button" class="mic-btn" id="amberMicBtn" title="Hold or click to speak">🎤</button>
+          <button type="submit" class="send-btn">Send</button>
+        </form>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- ==========================================
+       MODAL: SIGHTING TIMELINE DRAWER
+       ========================================== -->
+  <div class="modal-backdrop" id="timelineModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="timelineModalTitle">Carton Sighting Timeline</div>
+        <button class="modal-close-btn" id="closeTimelineModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="timeline-chain" id="timelineChainContainer">
+          <!-- Sighting entries inserted dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: RESOLVE ALERT WITH NOTES
+       ========================================== -->
+  <div class="modal-backdrop" id="resolveAlertModal">
+    <div class="modal-dialog" style="width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title">Resolve Alert</div>
+        <button class="modal-close-btn" id="closeResolveModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="resolveAlertId">
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 12px; font-weight:600; color: var(--text-muted); display: block; margin-bottom: 6px;">Resolution Note:</label>
+          <textarea class="text-input" id="resolveNoteInput" rows="3" style="width: 100%;" placeholder="e.g. Operator moved carton back to Floor 2"></textarea>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 12px; font-weight:600; color: var(--text-muted); display: block; margin-bottom: 6px;">Update Destination Shelf (Optional):</label>
+          <select class="select-input" id="resolveNewShelfSelect" style="width: 100%;">
+            <option value="">Keep current destination</option>
+            <option value="L2-B1">Floor 2 · L2-B1</option>
+            <option value="L2-B2">Floor 2 · L2-B2</option>
+            <option value="L2-B3">Floor 2 · L2-B3</option>
+            <option value="L3-A1">Floor 3 · L3-A1</option>
+            <option value="L3-A2">Floor 3 · L3-A2</option>
+          </select>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+          <button class="btn btn-outline" id="cancelResolveBtn">Cancel</button>
+          <button class="btn btn-success" id="confirmResolveBtn">Confirm Resolution</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>
